@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<!-- By default, only the Clean and Build commands use this build script. -->
+<!-- Commands such as Run, Debug, and Test only use this build script if -->
+<!-- the Compile on Save feature is turned off for the project. -->
+<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
+<!-- in the project's Project Properties dialog box.-->
+<project name="LeJOSEV3" default="run" basedir=".">
+    <description>Builds, tests, and runs the project EV3test.</description>
+    <import file="nbproject/build-impl.xml"/>
+    
+    <!--
+        Build script for using LeJOS EV3 with NetBeans.
+        Developed and tested in Apache NetBeans 11.0 running on Windows.
+        
+        Copy this file and replace the default build.xml in your NetBeans project.
+        
+        Overrides standard actions "Run", "Run file", "Debug" and "Debug file"
+        to compile a .jar file for the EV3 and uploads it to the brick via USB.
+        
+        For the override to work the setting "Compile on Save" must be disabled
+        in the project properties, 'Build -> Compiling -> Compile on Save', 
+        as described in the header of this file.
+        
+        Must target Java 7 in project properties to run on EV3, 
+        'Sources -> Source/Binary Format: -> JDK 7'.
+        
+        The property "ev3.run.remote" below can be set to automatically start
+        the program after upload, but use with care as this will interfere with
+        the menu system running on the EV3. The preferred method is to upload
+        the program and start it from the menu.
+    
+        When debugging a program, whether started remotely or from the EV3 menu,
+        Go to 'Debug -> Attach debugger...' and connect to the running program,
+        by default with Host: 10.0.1.1 and Port: 8000.
+    
+    -->
+    
+    
+    <!-- Set this to true to start program remotely on EV3 after upload. -->
+    <!-- Can cause conflict with the menu system running on the EV3. -->
+    <property name="ev3.run.remote" value="false"/>
+    
+    <!-- EV3 SSH SECTION -->
+    <property name="ev3.host" value="10.0.1.1"/> <!-- 10.0.1.1 is IP-address on USB-connection -->
+    <property name="ev3.username" value="root"/> <!-- root is default username -->
+    <property name="ev3.password" value=""/> <!-- default password is empty -->
+
+    <!-- EV3 LINUX SECTION -->
+    <property name="lejos.home" value="/home/root/lejos/"/>  <!-- Home directory on EV3 -->
+    <property name="lejos.programs.dir" value="/home/lejos/programs/"/> <!-- Programs upload directory on EV3 -->
+    
+    
+    
+    <macrodef name="make-jar">
+        <attribute name="jar.file" />
+        <attribute name="main.class" />
+        <sequential>
+            <jar destfile="@{jar.file}" basedir="${build.classes.dir}">
+                <manifest>
+                    <attribute name="Main-Class" value="@{main.class}"/>
+                    <attribute name="Class-Path" value="${lejos.home}/lib/ev3classes.jar ${lejos.home}/libjna/usr/share/java/jna.jar"/>
+                </manifest>
+            </jar> 		    
+        </sequential>
+    </macrodef>
+    
+    <target name="jar" depends="init,compile">
+        <tstamp/>
+        <echo message="Packing ${jlink.launcher.name}.jar file..."/>
+        <make-jar jar.file="${jlink.launcher.name}.jar" main.class="${main.class}"/>
+    </target>
+    
+    <target name="jar-single" depends="init,compile-single">
+        <tstamp/>
+        <fail unless="run.class">Must select one file in the IDE or set run.class</fail>
+        <echo message="Packing ${run.class}.jar file..."/>
+        <make-jar jar.file="${run.class}.jar" main.class="${run.class}"/>
+    </target>
+    
+    <target name="deploy" depends="init,jar">
+        <tstamp/>
+        <echo message="Uploading .jar file to EV3..."/>
+        
+        <scp todir="${ev3.username}:${ev3.password}@${ev3.host}:${lejos.programs.dir}" trust="true">
+            <fileset file="${jlink.launcher.name}.jar"/>
+        </scp>
+    </target>
+    
+    <target name="deploy-single" depends="init,jar-single">
+        <tstamp/>
+        <fail unless="run.class">Must select one file in the IDE or set run.class</fail>
+        <echo message="Uploading .jar file to EV3..."/>
+        
+        <scp todir="${ev3.username}:${ev3.password}@${ev3.host}:${lejos.programs.dir}" trust="true">
+            <fileset file="${run.class}.jar"/>
+        </scp>
+    </target>
+    
+    <target name="run" depends="init,deploy" if="${ev3.run.remote}">
+        <tstamp/>
+        <echo message="Running ${jlink.launcher.name}.jar in remote."/>
+        <sshexec host="${ev3.host}"
+                username="${ev3.username}"
+                password="${ev3.password}"
+                command="cd ${lejos.programs.dir}; echo s > ${lejos.home}/bin/utils/menufifo; jrun -cp ${jlink.launcher.name}.jar lejos.internal.ev3.EV3Wrapper  ${main.class}; echo r > ${lejos.home}/bin/utils/menufifo"
+                trust="true"
+        />
+    </target>
+    
+    <target name="run-single" depends="init,deploy-single" if="${ev3.run.remote}">
+        <tstamp/>
+        <fail unless="run.class">Must select one file in the IDE or set run.class</fail>
+        <echo message="Running ${run.class}.jar in remote."/>
+        <sshexec host="${ev3.host}"
+                username="${ev3.username}"
+                password="${ev3.password}"
+                command="cd ${lejos.programs.dir}; echo s > ${lejos.home}/bin/utils/menufifo; jrun -cp ${run.class}.jar lejos.internal.ev3.EV3Wrapper ${run.class}; echo r > ${lejos.home}/bin/utils/menufifo"
+                trust="true"
+        />
+    </target>
+    
+    <target name="debug" depends="init,deploy" if="${ev3.run.remote}">
+        <tstamp/>
+        <echo message="Debugging ${jlink.launcher.name}.jar in remote. Go to 'Debug -> Attach debugger...' and connect to host:${ev3.host} port:8000"/>
+        <sshexec host="${ev3.host}"
+                username="${ev3.username}"
+                password="${ev3.password}"
+                command="cd ${lejos.programs.dir}; echo s > ${lejos.home}/bin/utils/menufifo; jrun -agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=y -cp ${jlink.launcher.name}.jar lejos.internal.ev3.EV3Wrapper ${main.class}.jar; echo r > ${lejos.home}/bin/utils/menufifo"
+                trust="true"
+        />
+    </target>
+    
+    
+    <target name="-pre-debug-single" depends="init,deploy-single">
+        <tstamp/>
+        <fail unless="debug.class">Must select one file in the IDE or set debug.class</fail>
+        <antcall target="deploy-single">
+            <param name="run.class" value="${debug.class}"/>
+        </antcall>
+    </target>
+    <target name="debug-single" depends="init,-pre-debug-single" if="${ev3.run.remote}">
+        <tstamp/>
+        <echo message="Debugging ${debug.class}.jar in remote. Go to 'Debug -> Attach debugger...' and connect to host:{ev3.host} port:8000"/>
+        <sshexec host="${ev3.host}"
+                username="${ev3.username}"
+                password="${ev3.password}"
+                command="cd ${lejos.programs.dir}; echo s > ${lejos.home}/bin/utils/menufifo; jrun -agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=y -cp ${debug.class}.jar lejos.internal.ev3.EV3Wrapper ${debug.class}; echo r > ${lejos.home}/bin/utils/menufifo"
+                trust="true"
+        />
+    </target>
+</project>
