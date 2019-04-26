@@ -23,3 +23,18 @@ the program and start it from the menu.
 When debugging a program, whether started remotely or from the EV3 menu,
 Go to 'Debug -> Attach debugger...' and connect to the running program,
 by default with Host: 10.0.1.1 and Port: 8000.
+
+
+## Dependencies
+
+* [Java JDK 8](https://www.oracle.com/technetwork/java/javaee/downloads/jdk8-downloads-2133151.html) OR [Java JDK 7](https://www.oracle.com/technetwork/java/javase/downloads/java-archive-downloads-javase7-521261.html)
+* [Java JRE 7 for EV3](https://www.oracle.com/technetwork/java/embedded/downloads/javase/javaseemeddedev3-1982511.html)
+* [NetBeans 11.0](https://netbeans.apache.org/download/nb110/nb110.html)
+* [LeJOS EV3 0.9.1-beta](https://sourceforge.net/projects/ev3.lejos.p/files/)
+
+### LeJOS windows installation instructions
+<https://sourceforge.net/p/lejos/wiki/Windows%20Installation/>
+
+
+### Inspiration taken from
+<https://github.com/jabrena/liverobots/blob/master/build.xml>
