@@ -69,8 +69,8 @@
     
     <target name="jar" depends="init,compile">
         <tstamp/>
-        <echo message="Packing ${jlink.launcher.name}.jar file..."/>
-        <make-jar jar.file="${jlink.launcher.name}.jar" main.class="${main.class}"/>
+        <echo message="Packing ${main.class}.jar file..."/>
+        <make-jar jar.file="{main.class}.jar" main.class="${main.class}"/>
     </target>
     
     <target name="jar-single" depends="init,compile-single">
@@ -85,7 +85,7 @@
         <echo message="Uploading .jar file to EV3..."/>
         
         <scp todir="${ev3.username}:${ev3.password}@${ev3.host}:${lejos.programs.dir}" trust="true">
-            <fileset file="${jlink.launcher.name}.jar"/>
+            <fileset file="${main.class}.jar"/>
         </scp>
     </target>
     
@@ -101,11 +101,11 @@
     
     <target name="run" depends="init,deploy" if="${ev3.run.remote}">
         <tstamp/>
-        <echo message="Running ${jlink.launcher.name}.jar in remote."/>
+        <echo message="Running ${main.class}.jar in remote."/>
         <sshexec host="${ev3.host}"
                 username="${ev3.username}"
                 password="${ev3.password}"
-                command="cd ${lejos.programs.dir}; echo s > ${lejos.home}/bin/utils/menufifo; jrun -cp ${jlink.launcher.name}.jar lejos.internal.ev3.EV3Wrapper  ${main.class}; echo r > ${lejos.home}/bin/utils/menufifo"
+                command="cd ${lejos.programs.dir}; echo s > ${lejos.home}/bin/utils/menufifo; jrun -cp ${main.class}.jar lejos.internal.ev3.EV3Wrapper  ${main.class}; echo r > ${lejos.home}/bin/utils/menufifo"
                 trust="true"
         />
     </target>
@@ -124,11 +124,11 @@
     
     <target name="debug" depends="init,deploy" if="${ev3.run.remote}">
         <tstamp/>
-        <echo message="Debugging ${jlink.launcher.name}.jar in remote. Go to 'Debug -> Attach debugger...' and connect to host:${ev3.host} port:8000"/>
+        <echo message="Debugging ${main.class}.jar in remote. Go to 'Debug -> Attach debugger...' and connect to host:${ev3.host} port:8000"/>
         <sshexec host="${ev3.host}"
                 username="${ev3.username}"
                 password="${ev3.password}"
-                command="cd ${lejos.programs.dir}; echo s > ${lejos.home}/bin/utils/menufifo; jrun -agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=y -cp ${jlink.launcher.name}.jar lejos.internal.ev3.EV3Wrapper ${main.class}.jar; echo r > ${lejos.home}/bin/utils/menufifo"
+                command="cd ${lejos.programs.dir}; echo s > ${lejos.home}/bin/utils/menufifo; jrun -agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=y -cp ${main.class}.jar lejos.internal.ev3.EV3Wrapper ${main.class}.jar; echo r > ${lejos.home}/bin/utils/menufifo"
                 trust="true"
         />
     </target>
